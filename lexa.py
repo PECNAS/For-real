@@ -8,8 +8,14 @@ import time
 import speech_recognition as sr
 import datetime
 import pyttsx3
+import webbrowser
 
 from fuzzywuzzy import fuzz
+
+exceptions = [
+	"найди", "лёха", "для меня", "найти", "узнай", "узнать", "найти", "для",
+	"меня","лёша", "лёха", "лёх", "лёша", "алескей", "ассистент", "лёш"
+]
 
 opts = {
 	"alias": ("лёха","лёх","лёша","алескей","ассистент","лёш"),
@@ -18,6 +24,7 @@ opts = {
 		"ctime": ("сколько время", "который час"),
 		"joke": ("шутка", "расскажи шутку"),
 		"google": ("гугл", "открыть гугл", "открой гугл"),
+		"find": ("хочу найти", "найди для меня", "найди мне", "узнай для меня"),
 		"stop": ("стоп", "спасибо за помощь", "заканчивай работу")
 	}
 }
@@ -47,7 +54,7 @@ def callback(recognizer, audio):
 
             # распознаем и выполняем команду
             cmd = recognize_cmd(cmd)
-            execute_cmd(cmd['cmd'])
+            execute_cmd(cmd['cmd'], voice)
 
 
     except sr.UnknownValueError:
@@ -67,12 +74,23 @@ def recognize_cmd(cmd):# занимается нечётким поиском к
 
 	return RC
 
-def execute_cmd(cmd):
+def execute_cmd(cmd, voice):
 	if cmd == "ctime":
 		now = datetime.datetime.now()
 		speak("Сейчас " + str(now.hour) + ":" + str(now.minute))
 	elif cmd == "joke":
 		speak("Колобок повесился, хехехех")
+	elif cmd == "google":
+		speak("Открываю гугл")
+		webbrowser.open("https://www.google.com")
+	elif cmd  == "find":
+		charackters = voice.split() # в массив charackters добавляем все слова из строки распознования voice, деля их по пробелу
+		for i in range(len(charackters)): # циклом пробегаемся по массиву
+			if charackters[i] in exceptions: # если обнаружено вхождение слова исключения в строку запроса
+				voice = voice.replace(charackters[i], "") # убираем слово исключение
+
+		webbrowser.open('https://www.google.ru/search?q=' + voice, "Я нашёл следующие результаты") # открываем ссылку
+		speak("По запросу " + voice + " я нашёл эти результаты")
 	elif cmd == "stop":
 		speak("Принял, заканчиваю работу")
 		sys.exit()
